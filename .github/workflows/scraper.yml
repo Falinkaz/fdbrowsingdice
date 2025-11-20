@@ -5,6 +5,9 @@ on:
     - cron: '0 9 * * 1-5'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   scrape-and-upload:
     runs-on: ubuntu-latest
@@ -12,6 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -27,17 +32,12 @@ jobs:
       
       - name: Install matching ChromeDriver
         run: |
-          # Get Chrome version
           CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1)
           echo "Chrome version: $CHROME_VERSION"
-          
-          # Download matching ChromeDriver
           wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}.0.7444.175/linux64/chromedriver-linux64.zip"
           unzip chromedriver-linux64.zip
           sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
           sudo chmod +x /usr/local/bin/chromedriver
-          
-          # Verify
           chromedriver --version
       
       - name: Install Python dependencies
