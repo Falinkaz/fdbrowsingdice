@@ -1,0 +1,98 @@
+name: Dice Job Scraper (Simple Version)
+
+on:
+  schedule:
+    # Run Monday-Friday at 9 AM UTC (adjust timezone as needed)
+    - cron: '0 9 * * 1-5'
+  workflow_dispatch:  # Allows manual triggering for testing
+
+jobs:
+  scrape-and-upload:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install Chrome
+        run: |
+          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          echo "deb http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+      
+      - name: Install ChromeDriver
+        run: |
+          wget -q "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/120.0.6099.109/linux64/chromedriver-linux64.zip"
+          unzip chromedriver-linux64.zip
+          sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
+          sudo chmod +x /usr/local/bin/chromedriver
+      
+      - name: Install Python dependencies
+        run: |
+          pip install pandas selenium
+      
+      - name: Run scraper
+        run: python dice_scraper.py
+      
+      - name: Commit and push CSV to repo
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          # Create a data directory if it doesn't exist
+          mkdir -p data
+          
+          # Copy CSV to data directory with timestamp
+          cp dice_jobs_detailed.csv data/latest.csv
+          cp dice_jobs_detailed.csv data/jobs_$(date +%Y%m%d).csv
+          
+          # Add and commit
+          git add data/
+          git commit -m "Update job data - $(date +%Y-%m-%d)" || echo "No changes to commit"
+          git push || echo "No changes to push"
+      
+      - name: Upload CSV as artifact (backup)
+        uses: actions/upload-artifact@v3
+        with:
+          name: dice-jobs-csv
+          path: dice_jobs_detailed.csv
+          retention-days: 7
+```
+
+---
+
+## 🖼️ Visual Guide
+
+Here's what you'll see at each step:
+
+**Step 1:** Your repo homepage
+```
+[Your Repo] > Code  Issues  Pull requests  Actions
+                               [< > Code ▼] [Add file ▼]
+```
+
+**Step 2:** After clicking "Add file" > "Create new file"
+```
+[Your Repo] / [Name your file...]
+```
+
+**Step 3:** Type the path (as you type, folders appear!)
+```
+[Your Repo] / .github / workflows / scraper.yml
+                ↑          ↑           ↑
+              folder    subfolder    filename
+```
+
+**Step 4:** Big text box appears - paste the code there
+
+**Step 5:** Bottom of page
+```
+Commit message: [Add automated workflow]
+○ Commit directly to the main branch
+              [Commit new file] ← Click this
