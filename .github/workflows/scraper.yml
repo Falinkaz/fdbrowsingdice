@@ -1,10 +1,9 @@
-name: Dice Job Scraper (Simple Version)
+name: Dice Job Scraper
 
 on:
   schedule:
-    # Run Monday-Friday at 9 AM UTC (adjust timezone as needed)
     - cron: '0 9 * * 1-5'
-  workflow_dispatch:  # Allows manual triggering for testing
+  workflow_dispatch:
 
 jobs:
   scrape-and-upload:
@@ -34,65 +33,30 @@ jobs:
           sudo chmod +x /usr/local/bin/chromedriver
       
       - name: Install Python dependencies
-        run: |
-          pip install pandas selenium
+        run: pip install pandas selenium
       
       - name: Run scraper
         run: python dice_scraper.py
       
-      - name: Commit and push CSV to repo
+      - name: Create data directory
+        run: mkdir -p data
+      
+      - name: Copy CSV files
+        run: |
+          cp dice_jobs_detailed.csv data/latest.csv
+          cp dice_jobs_detailed.csv data/jobs_$(date +%Y%m%d).csv
+      
+      - name: Commit and push changes
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          
-          # Create a data directory if it doesn't exist
-          mkdir -p data
-          
-          # Copy CSV to data directory with timestamp
-          cp dice_jobs_detailed.csv data/latest.csv
-          cp dice_jobs_detailed.csv data/jobs_$(date +%Y%m%d).csv
-          
-          # Add and commit
           git add data/
-          git commit -m "Update job data - $(date +%Y-%m-%d)" || echo "No changes to commit"
-          git push || echo "No changes to push"
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update job data"
+          git push
       
-      - name: Upload CSV as artifact (backup)
+      - name: Upload CSV as artifact
         uses: actions/upload-artifact@v3
         with:
           name: dice-jobs-csv
           path: dice_jobs_detailed.csv
           retention-days: 7
-```
-
----
-
-## 🖼️ Visual Guide
-
-Here's what you'll see at each step:
-
-**Step 1:** Your repo homepage
-```
-[Your Repo] > Code  Issues  Pull requests  Actions
-                               [< > Code ▼] [Add file ▼]
-```
-
-**Step 2:** After clicking "Add file" > "Create new file"
-```
-[Your Repo] / [Name your file...]
-```
-
-**Step 3:** Type the path (as you type, folders appear!)
-```
-[Your Repo] / .github / workflows / scraper.yml
-                ↑          ↑           ↑
-              folder    subfolder    filename
-```
-
-**Step 4:** Big text box appears - paste the code there
-
-**Step 5:** Bottom of page
-```
-Commit message: [Add automated workflow]
-○ Commit directly to the main branch
-              [Commit new file] ← Click this
