@@ -36,7 +36,7 @@ jobs:
         run: pip install pandas selenium
       
       - name: Run scraper
-        run: python dice_scraper.py
+        run: python multiurlsv2.py
       
       - name: Create data directory
         run: mkdir -p data
