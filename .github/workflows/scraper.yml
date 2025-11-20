@@ -25,12 +25,20 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
       
-      - name: Install ChromeDriver
+      - name: Install matching ChromeDriver
         run: |
-          wget -q "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/120.0.6099.109/linux64/chromedriver-linux64.zip"
+          # Get Chrome version
+          CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1)
+          echo "Chrome version: $CHROME_VERSION"
+          
+          # Download matching ChromeDriver
+          wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}.0.7444.175/linux64/chromedriver-linux64.zip"
           unzip chromedriver-linux64.zip
           sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
           sudo chmod +x /usr/local/bin/chromedriver
+          
+          # Verify
+          chromedriver --version
       
       - name: Install Python dependencies
         run: pip install pandas selenium
